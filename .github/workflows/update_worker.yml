@@ -22,8 +22,8 @@ jobs:
       issues: write
 
     steps:
-      - name: Checkout 仓库 # 检出仓库代码
-        uses: actions/checkout@v4
+      - name: Checkout 仓库
+        uses: actions/checkout@v6
 
       - name: 检查并初始化 update_type.txt # 检查并初始化 update_type.txt 文件
         id: init_update_type_file
@@ -182,7 +182,7 @@ jobs:
       - name: 发送更新成功通知 (复用或创建 GitHub Issue) # 发送更新成功通知 (复用或创建 GitHub Issue)
         # 仅在前面的步骤都成功执行且确实进行了更新时触发此通知
         if: success() && env.need_update == 'true'
-        uses: actions/github-script@v6
+        uses: actions/github-script@v8
         with:
           # 使用 GITHUB_TOKEN 进行身份验证，它具有创建 Issue 的权限
           github-token: ${{ secrets.GITHUB_TOKEN }}
