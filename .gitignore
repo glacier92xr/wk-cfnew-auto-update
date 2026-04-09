@@ -1,0 +1,12 @@
+# IDE配置文件（适配Trae IDE）
+.trae/
+.vscode/
+.idea/
+.history/
+
+# 日志与临时文件
+*.log
+logs/
+Logs/
+tmp/
+temp/
