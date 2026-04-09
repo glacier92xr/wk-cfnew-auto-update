@@ -2,17 +2,17 @@ name: Auto Update _worker.js
 
 on:
   schedule:
-    - cron: '0 0 * * *'    # 每天00:00 UTC运行
-  workflow_dispatch:       # 允许手动触发
+    - cron: "0 0 * * *" # 每天00:00 UTC运行
+  workflow_dispatch: # 允许手动触发
     inputs:
       release_type:
-        description: '选择更新版本类型' # 选择更新版本类型
+        description: "选择更新版本类型" # 选择更新版本类型
         required: true
-        default: 'release'
+        default: "release"
         type: choice
         options:
-          - 'release'
-          - 'prerelease'
+          - "release"
+          - "prerelease"
 
 jobs:
   update:
@@ -69,7 +69,7 @@ jobs:
 
           if [ "$ACTUAL_RELEASE_TYPE" == "prerelease" ]; then
             # 如果选择预发布版本，获取所有 release 并筛选最新的非草稿预发布版本
-            latest_tag=$(curl -s https://api.github.com/repos/bia-pain-bache/BPB-Worker-Panel/releases \
+            latest_tag=$(curl -s https://api.github.com/repos/byJoey/cfnew/releases \
               | jq -r 'map(select(.prerelease == true and .draft == false)) | sort_by(.published_at) | .[-1].tag_name')
             if [ -z "$latest_tag" ]; then
               echo "未找到任何预发布版本。" # 未找到任何预发布版本。
@@ -78,7 +78,7 @@ jobs:
             echo "最新预发布版本: $latest_tag" # 最新预发布版本
           else
             # 默认或选择正式发布版本，获取最新正式发布版本 (GitHub API 的 /latest 默认返回非预发布版本)
-            latest_tag=$(curl -s https://api.github.com/repos/bia-pain-bache/BPB-Worker-Panel/releases/latest | jq -r '.tag_name')
+            latest_tag=$(curl -s https://api.github.com/repos/byJoey/cfnew/releases/latest | jq -r '.tag_name')
             if [ -z "$latest_tag" ]; then
               echo "未找到任何正式发布版本。" # 未找到任何正式发布版本。
               exit 1
@@ -124,7 +124,7 @@ jobs:
         if: env.need_update == 'true'
         run: |
           # 构建下载 URL
-          download_url="https://github.com/bia-pain-bache/BPB-Worker-Panel/releases/download/${{ env.latest_tag }}/worker.js"
+          download_url="https://github.com/byJoey/cfnew/releases/download/${{ env.latest_tag }}/worker.js"
           echo "下载文件: $download_url" # 正在下载文件
           # 使用 curl 下载文件并保存为 _worker.js
           curl -L -o _worker.js "$download_url"
