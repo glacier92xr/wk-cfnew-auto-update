@@ -58,6 +58,7 @@ GitHub Actions 会每日 00:00（UTC 时间）自动运行：
 
 ## 📂 目录结构
 
+```text
 /
 ├── \_worker.js
 ├── version.txt
@@ -68,6 +69,7 @@ GitHub Actions 会每日 00:00（UTC 时间）自动运行：
 └── .github/
    └── workflows/
       └── update_worker.yml
+```
 
 ## ⚙️ 配置说明
 
