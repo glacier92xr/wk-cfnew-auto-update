@@ -119,15 +119,36 @@ jobs:
             echo "need_update=true" >> $GITHUB_ENV
           fi
 
-      - name: 下载并替换 _worker.js # 下载并替换 _worker.js 文件
+      - name: 下载 Pages.zip 并提取 _worker.js # 下载 Pages.zip 并提取 _worker.js 文件
         # 仅在需要更新时执行此步骤
         if: env.need_update == 'true'
         run: |
           # 构建下载 URL
-          download_url="https://github.com/byJoey/cfnew/releases/download/${{ env.latest_tag }}/worker.js"
-          echo "下载文件: $download_url" # 正在下载文件
-          # 使用 curl 下载文件并保存为 _worker.js
-          curl -L -o _worker.js "$download_url"
+          download_url="https://github.com/byJoey/cfnew/releases/download/${{ env.latest_tag }}/Pages.zip"
+          echo "下载文件: $download_url"
+          # 使用 curl 下载 Pages.zip
+          curl -L -o Pages.zip "$download_url"
+          # 验证 Pages.zip 是否下载成功
+          if [ ! -f "Pages.zip" ] || [ ! -s "Pages.zip" ]; then
+            echo "Pages.zip 下载失败或文件为空"
+            exit 1
+          fi
+          echo "Pages.zip 下载成功"
+
+          # 解压 Pages.zip
+          echo "解压 Pages.zip..."
+          unzip -o Pages.zip
+          # 验证 _worker.js 是否存在
+          if [ ! -f "_worker.js" ]; then
+            echo "错误: Pages.zip 中未找到 _worker.js 文件"
+            exit 1
+          fi
+          echo "_worker.js 提取成功"
+
+          # 删除 Pages.zip，不保留原始压缩包
+          rm -f Pages.zip
+          echo "已删除 Pages.zip"
+
           # 将最新标签名写入 version.txt
           echo "${{ env.latest_tag }}" > version.txt
 
