@@ -126,6 +126,13 @@ jobs:
         # 仅在需要更新时执行此步骤
         if: env.need_update == 'true'
         run: |
+          # 创建临时目录用于操作
+          TEMP_DIR=$(mktemp -d)
+          echo "创建临时目录: $TEMP_DIR"
+
+          # 进入临时目录
+          cd "$TEMP_DIR"
+
           # 构建下载 URL
           download_url="https://github.com/byJoey/cfnew/releases/download/${{ env.latest_tag }}/Pages.zip"
           echo "下载文件: $download_url"
@@ -152,8 +159,16 @@ jobs:
           rm -f Pages.zip
           echo "已删除 Pages.zip"
 
-          # 将最新标签名写入 version.txt
-          echo "${{ env.latest_tag }}" > version.txt
+          # 将 _worker.js 复制回工作目录
+          cp _worker.js "$GITHUB_WORKSPACE/_worker.js"
+          echo "_worker.js 已复制到工作目录"
+
+          # 将最新标签名写入 version.txt (在工作目录)
+          echo "${{ env.latest_tag }}" > "$GITHUB_WORKSPACE/version.txt"
+
+          # 清理临时目录
+          rm -rf "$TEMP_DIR"
+          echo "临时目录已清理"
 
       - name: 提交更新到 GitHub # 提交更新到 GitHub 仓库
         # 仅在需要更新时执行此步骤
