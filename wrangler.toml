@@ -5,4 +5,4 @@ workers_dev = true
 
 [[kv_namespaces]]
 binding = "C"
-id = "753fa16245ec455fafb1bd8a05e830c"
+id = "753fa16245ec455fafb1bd8a05e830c3"
