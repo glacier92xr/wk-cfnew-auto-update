@@ -4,14 +4,19 @@ main = "_worker.js"
 compatibility_date = "2026-01-20"
 workers_dev = true
 
-#[vars]
-#et= "yes"
-#et = "yes"
-#ex = "yes"
-#ech = "yes"
-#ae = "yes"
+[vars]
+u = "cee6664d-c051-4a90-9d8c-8c47094192e5"
 
 
 [[kv_namespaces]]
 binding = "C"
 id = "753fa16245ec455fafb1bd8a05e830c3"
+
+
+[observability]
+[observability.logs]
+enabled = true
+invocation_logs = true
+
+[observability.traces]
+enabled = true
