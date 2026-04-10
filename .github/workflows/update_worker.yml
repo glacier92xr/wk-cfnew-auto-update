@@ -162,12 +162,24 @@ jobs:
           # 配置 Git 用户名和邮箱，以便 GitHub Actions 可以提交代码
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          # 添加 _worker.js 和 version.txt 到 Git 暂存区
-          git add _worker.js version.txt
+          # 添加 _worker.js、version.txt 和 wrangler.toml 到 Git 暂存区
+          git add _worker.js version.txt wrangler.toml
           # 提交更改，提交信息包含更新的版本号
           git commit -m "Update _worker.js to version ${{ env.latest_tag }}"
           # 推送更改到远程仓库
           git push
+
+      - name: 部署到 Cloudflare Workers # 部署到 Cloudflare Workers
+        # 仅在需要更新时执行此步骤
+        if: env.need_update == 'true'
+        run: |
+          # 安装 wrangler
+          npm install -g wrangler
+          # 部署 Worker，使用 secret 中的环境变量
+          wrangler deploy --name wk-cfnew-auto-update --var "u:${{ secrets.CF_VAR_U }}"
+        env:
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
 
       - name: 提交 update_type.txt (如果自动创建) # 提交 update_type.txt (如果文件是自动创建的)
         # 仅当 update_type.txt 文件是在当前工作流运行中自动创建时才执行此步骤
