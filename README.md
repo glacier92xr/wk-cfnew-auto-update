@@ -67,8 +67,8 @@ GitHub Actions 会每日 00:00（UTC 时间）自动运行：
 ├── .gitignore
 ├── README.md
 └── .github/
-   └── workflows/
-      └── update_worker.yml
+  └── workflows/
+    └── update_worker.yml
 ```
 
 ## ⚙️ 配置说明
