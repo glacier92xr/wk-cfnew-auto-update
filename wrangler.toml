@@ -2,3 +2,22 @@
 main = "_worker.js"
 compatibility_date = "2026-01-20"
 workers_dev = true
+
+
+[vars]
+# 修改为自己uuid
+u = "cee6664d-c051-4a90-9d8c-8c47094192e5"
+
+[[kv_namespaces]]
+binding = "C"
+# 修改为自己创建的KV命名空间ID
+id = "f615ed236cb1471dacdcfc7068d55b86"
+
+
+[observability]
+[observability.logs]
+enabled = true
+invocation_logs = true
+
+[observability.traces]
+enabled = true
