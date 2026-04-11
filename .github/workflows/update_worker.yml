@@ -229,14 +229,13 @@ jobs:
           else
             echo "secrets.CF_VAR_U 未设置，跳过更新"
           fi
+          echo "输出 wrangler.toml 内容:"
+          cat wrangler.toml
 
       - name: 部署到 Cloudflare Workers # 部署到 Cloudflare Workers
         # 仅在需要更新时执行此步骤
         if: env.need_update == 'true'
         run: |
-          ls -la
-          cat wrangler.toml
-
           # 部署 Worker
           npm run deploy
         env:
