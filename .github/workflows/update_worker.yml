@@ -13,6 +13,11 @@ on:
         options:
           - "release"
           - "prerelease"
+      kv-name:
+        description: "KV命名空间名称"
+        required: false
+        default: "cf-new-kv"
+        type: string
 
 jobs:
   update:
@@ -184,17 +189,56 @@ jobs:
           # 推送更改到远程仓库
           git push
 
+      - name: 初始化环境
+        # 仅在需要更新时执行此步骤
+        if: env.need_update == 'true'
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          # 安装 wrangler
+          npm install
+
+      - name: 创建 KV 命名空间并绑定到 Worker # 执行 step-kv 脚本创建 KV 并绑定
+        # 仅在需要更新时执行此步骤
+        if: env.need_update == 'true'
+        run: |
+          cd "$GITHUB_WORKSPACE"
+
+          # 设置执行权限
+          chmod +x scripts/step-kv.sh
+
+          # 执行 step-kv 脚本，使用 kv-name 输入参数
+          ./scripts/step-kv.sh "${{ github.event.inputs.kv-name }}"
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+
+      - name: 更新 wrangler.toml 中的 u 变量 # 更新 wrangler.toml 中的 u 变量
+        # 仅在需要更新时执行此步骤
+        if: env.need_update == 'true'
+        run: |
+          cd "$GITHUB_WORKSPACE"
+
+          # 检查 secrets.CF_VAR_U 是否设置
+          if [ -n "${{ secrets.CF_VAR_U }}" ]; then
+            echo "正在更新 wrangler.toml 中的 u 变量..."
+
+            # 使用 sed 更新 wrangler.toml 中的 u 值
+            sed -i 's/u = ".*"/u = "${{ secrets.CF_VAR_U }}"/' wrangler.toml
+
+            echo "wrangler.toml 中的 u 变量已更新"
+          else
+            echo "secrets.CF_VAR_U 未设置，跳过更新"
+          fi
+
       - name: 部署到 Cloudflare Workers # 部署到 Cloudflare Workers
         # 仅在需要更新时执行此步骤
         if: env.need_update == 'true'
         run: |
-          # 安装 wrangler
-          npm install -g wrangler
-          # 调试
           ls -la
           cat wrangler.toml
-          # 部署 Worker，使用 secret 中的环境变量，指定配置文件
-          wrangler deploy --config wrangler.toml --no-bundle --var "u:${{ secrets.CF_VAR_U }}"
+
+          # 部署 Worker
+          npm run deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
