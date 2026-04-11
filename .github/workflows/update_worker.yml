@@ -1,4 +1,4 @@
-name: Auto Update _worker.js
+name: auto update and deploy
 
 on:
   schedule:
@@ -229,8 +229,8 @@ jobs:
           else
             echo "secrets.CF_VAR_U 未设置，跳过更新"
           fi
-          echo "输出 wrangler.toml 内容:"
-          cat wrangler.toml
+          # echo "输出 wrangler.toml 内容:"
+          # cat wrangler.toml
 
       - name: 更新 wrangler.toml 中的自定义域名 # 更新自定义域名配置
         # 仅在需要更新时执行此步骤
@@ -265,8 +265,8 @@ jobs:
           else
             echo "vars.CF_ROUTE_DOMAIN 未设置，跳过自定义域名配置"
           fi
-          echo "输出 wrangler.toml 内容:"
-          cat wrangler.toml
+          # echo "输出 wrangler.toml 内容:"
+          # cat wrangler.toml
 
       - name: 部署到 Cloudflare Workers # 部署到 Cloudflare Workers
         # 仅在需要更新时执行此步骤
