@@ -245,16 +245,18 @@ jobs:
             # 读取当前 wrangler.toml 内容
             CONTENT=$(cat wrangler.toml)
 
-            # 检查是否已有 routes 配置
-            if echo "$CONTENT" | grep -q "^routes"; then
-              # 如果已有 routes，替换整个 routes 部分
-              echo "$CONTENT" | sed '/^routes/,/^}$/d' > wrangler.toml.tmp
+            # 检查是否已有 [[routes]] 配置
+            if echo "$CONTENT" | grep -qE '^\[\[routes\]\]'; then
+              # 如果已有 routes，删除整个 [[routes]] 部分
+              echo "$CONTENT" | sed -E '/^\[\[routes\]\]$/,/^[[:space:]]*$/d' > wrangler.toml.tmp
               mv wrangler.toml.tmp wrangler.toml
             fi
 
-            # 在 wrangler.toml 末尾添加 routes 配置
+            # 在 wrangler.toml 末尾添加 [[routes]] 配置
             echo '' >> wrangler.toml
-            echo 'routes = [{ pattern = "'"${{ vars.CF_ROUTE_DOMAIN }}"'" }]' >> wrangler.toml
+            echo '[[routes]]' >> wrangler.toml
+            echo 'pattern = "'"${{ vars.CF_ROUTE_DOMAIN }}"'"' >> wrangler.toml
+            echo 'custom_domain = true' >> wrangler.toml
 
             # 设置 workers_dev 为 false 以使用自定义域名
             sed -i 's/workers_dev = true/workers_dev = false/' wrangler.toml
