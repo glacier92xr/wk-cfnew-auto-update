@@ -39,11 +39,9 @@ error() {
 
 get_existing_kv_id() {
     local name="$1"
-    log "Checking if KV namespace '$name' already exists..."
 
     local output
     output=$(npx wrangler kv namespace list 2>&1) || {
-        log "Failed to list KV namespaces: $output"
         return 1
     }
 
@@ -55,13 +53,11 @@ get_existing_kv_id() {
         fi
 
         if [ -n "$kv_id" ]; then
-            log "Found existing KV: $name with ID: $kv_id"
             echo "$kv_id"
             return 0
         fi
     fi
 
-    log "KV namespace '$name' does not exist"
     return 1
 }
 
@@ -99,23 +95,44 @@ update_wrangler_toml() {
         error "wrangler.toml not found at: $WRANGLER_TOML"
     fi
 
-    local content
-    content=$(cat "$WRANGLER_TOML")
+    local tmp_file="$WRANGLER_TOML.tmp"
+    local updated=false
 
-    if echo "$content" | grep -q 'id\s*=\s*"'; then
-        log "Updating existing KV ID in wrangler.toml..."
-        content=$(echo "$content" | sed -E 's/(id\s*=\s*")[^"]*(")/\1'"$kv_id"'\2/')
-    elif echo "$content" | grep -q '\[\[kv_namespaces\]\]'; then
-        log "Adding KV ID to existing [[kv_namespaces]] section..."
-        content=$(echo "$content" | sed -E '/\[\[kv_namespaces\]\]/a\id = "'"$kv_id"'"')
-    else
-        log "No existing [[kv_namespaces]] section, appending..."
-        echo -e "\n[[kv_namespaces]]\nbinding = \"C\"\nid = \"$kv_id\"" >> "$WRANGLER_TOML"
-        success "wrangler.toml updated successfully"
-        return 0
+    while IFS= read -r line || [ -n "$line" ]; do
+        if echo "$line" | grep -qE '^id\s*='; then
+            echo "id = \"$kv_id\""
+            updated=true
+        else
+            echo "$line"
+        fi
+    done < "$WRANGLER_TOML" > "$tmp_file"
+
+    if [ "$updated" = false ]; then
+        if grep -q '\[\[kv_namespaces\]\]' "$WRANGLER_TOML"; then
+            log "Adding KV ID to existing [[kv_namespaces]] section..."
+            rm "$tmp_file"
+            tmp_file="$WRANGLER_TOML.tmp2"
+            local found_kv=false
+            while IFS= read -r line || [ -n "$line" ]; do
+                echo "$line"
+                if echo "$line" | grep -qE '\[\[kv_namespaces\]\]'; then
+                    found_kv=true
+                elif [ "$found_kv" = true ] && echo "$line" | grep -qE '^binding\s*='; then
+                    found_kv=false
+                    echo "id = \"$kv_id\""
+                fi
+            done < "$WRANGLER_TOML" > "$tmp_file"
+        else
+            log "No existing [[kv_namespaces]] section, appending..."
+            echo "" >> "$tmp_file"
+            echo "[[kv_namespaces]]" >> "$tmp_file"
+            echo "binding = \"C\"" >> "$tmp_file"
+            echo "id = \"$kv_id\"" >> "$tmp_file"
+        fi
     fi
 
-    echo "$content" > "$WRANGLER_TOML"
+    mv "$tmp_file" "$WRANGLER_TOML"
+    rm -f "$WRANGLER_TOML.tmp2" 2>/dev/null
     success "wrangler.toml updated successfully"
 }
 
@@ -156,7 +173,10 @@ update_documentation_kv_id() {
 
     for doc in "${docs[@]}"; do
         if [ -f "$doc" ] && grep -q "$old_kv_id" "$doc" 2>/dev/null; then
-            sed -i "s/$old_kv_id/$new_kv_id/g" "$doc"
+            local tmp_file="$doc.tmp"
+            while IFS= read -r line || [ -n "$line" ]; do
+                echo "${line//$old_kv_id/$new_kv_id}"
+            done < "$doc" > "$tmp_file" && mv "$tmp_file" "$doc"
             log "Updated KV ID in: $doc"
             ((updated_count++)) || true
         fi
@@ -207,8 +227,15 @@ main() {
 
     cd "$PROJECT_DIR"
 
+    log "Checking if KV namespace '$KV_NAME' already exists..."
     local existing_kv_id
     existing_kv_id=$(get_existing_kv_id "$KV_NAME") || existing_kv_id=""
+
+    if [ -n "$existing_kv_id" ]; then
+        log "Found existing KV: $KV_NAME with ID: $existing_kv_id"
+    else
+        log "KV namespace '$KV_NAME' does not exist"
+    fi
 
     local kv_id_to_use=""
     local is_new_kv=false
