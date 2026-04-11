@@ -1,8 +1,8 @@
-name: Auto Update _worker.js
+name: auto update and deploy
 
 on:
   schedule:
-    - cron: "0 0 * * *" # 每天00:00 UTC运行
+    - cron: "0 16 * * *" # 每天 00:00 北京时间 (UTC+8)
   workflow_dispatch: # 允许手动触发
     inputs:
       release_type:
@@ -13,6 +13,11 @@ on:
         options:
           - "release"
           - "prerelease"
+      kv-name:
+        description: "KV命名空间名称"
+        required: false
+        default: "cf-new-kv"
+        type: string
 
 jobs:
   update:
@@ -184,17 +189,91 @@ jobs:
           # 推送更改到远程仓库
           git push
 
+      - name: 初始化环境
+        # 仅在需要更新时执行此步骤
+        if: env.need_update == 'true'
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          # 安装 wrangler
+          npm install
+
+      - name: 创建 KV 命名空间并绑定到 Worker # 执行 step-kv 脚本创建 KV 并绑定
+        # 仅在需要更新时执行此步骤
+        if: env.need_update == 'true'
+        run: |
+          cd "$GITHUB_WORKSPACE"
+
+          # 设置执行权限
+          chmod +x scripts/step-kv.sh
+
+          # 执行 step-kv 脚本，使用 kv-name 输入参数
+          ./scripts/step-kv.sh "${{ github.event.inputs.kv-name }}"
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+
+      - name: 更新 wrangler.toml 中的 u 变量 # 更新 wrangler.toml 中的 u 变量
+        # 仅在需要更新时执行此步骤
+        if: env.need_update == 'true'
+        run: |
+          cd "$GITHUB_WORKSPACE"
+
+          # 检查 secrets.CF_VAR_U 是否设置
+          if [ -n "${{ secrets.CF_VAR_U }}" ]; then
+            echo "正在更新 wrangler.toml 中的 u 变量..."
+
+            # 使用 sed 更新 wrangler.toml 中的 u 值
+            sed -i 's/u = ".*"/u = "${{ secrets.CF_VAR_U }}"/' wrangler.toml
+
+            echo "wrangler.toml 中的 u 变量已更新"
+          else
+            echo "secrets.CF_VAR_U 未设置，跳过更新"
+          fi
+          # echo "输出 wrangler.toml 内容:"
+          # cat wrangler.toml
+
+      - name: 更新 wrangler.toml 中的自定义域名 # 更新自定义域名配置
+        # 仅在需要更新时执行此步骤
+        if: env.need_update == 'true'
+        run: |
+          cd "$GITHUB_WORKSPACE"
+
+          # 检查 vars.CF_ROUTE_DOMAIN 是否设置（Repository variables）
+          if [ -n "${{ vars.CF_ROUTE_DOMAIN }}" ]; then
+            echo "正在更新 wrangler.toml 添加自定义域名..."
+
+            # 读取当前 wrangler.toml 内容
+            CONTENT=$(cat wrangler.toml)
+
+            # 检查是否已有 [[routes]] 配置
+            if echo "$CONTENT" | grep -qE '^\[\[routes\]\]'; then
+              # 如果已有 routes，删除整个 [[routes]] 部分
+              echo "$CONTENT" | sed -E '/^\[\[routes\]\]$/,/^[[:space:]]*$/d' > wrangler.toml.tmp
+              mv wrangler.toml.tmp wrangler.toml
+            fi
+
+            # 在 wrangler.toml 末尾添加 [[routes]] 配置
+            echo '' >> wrangler.toml
+            echo '[[routes]]' >> wrangler.toml
+            echo 'pattern = "'"${{ vars.CF_ROUTE_DOMAIN }}"'"' >> wrangler.toml
+            echo 'custom_domain = true' >> wrangler.toml
+
+            # 设置 workers_dev 为 false 以使用自定义域名
+            sed -i 's/workers_dev = true/workers_dev = false/' wrangler.toml
+
+            echo "wrangler.toml 中的自定义域名已添加: ${{ vars.CF_ROUTE_DOMAIN }}"
+          else
+            echo "vars.CF_ROUTE_DOMAIN 未设置，跳过自定义域名配置"
+          fi
+          # echo "输出 wrangler.toml 内容:"
+          # cat wrangler.toml
+
       - name: 部署到 Cloudflare Workers # 部署到 Cloudflare Workers
         # 仅在需要更新时执行此步骤
         if: env.need_update == 'true'
         run: |
-          # 安装 wrangler
-          npm install -g wrangler
-          # 调试
-          ls -la
-          cat wrangler.toml
-          # 部署 Worker，使用 secret 中的环境变量，指定配置文件
-          wrangler deploy --config wrangler.toml --var "u:${{ secrets.CF_VAR_U }}"
+          # 部署 Worker
+          npm run deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
