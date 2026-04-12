@@ -158,14 +158,12 @@ npm run deploy
 
 **如果您觉得项目对您有帮助，请给一个 Star 🌟，这是对我最大的鼓励！**
 
-## 🙏 特别鸣谢
-
-### 📢 特别说明
+## 📢 特别说明
 
 - 本仓库同步的内容来源于 [cfnew](https://github.com/byJoey/cfnew)。
 - 原项目版权归原作者所有，本项目仅用于自动同步更新，不对原内容进行修改。
 
-### 🛠 代码引用
+## 🛠 代码引用
 
 - [byJoey/wk-Auto-update](https://github.com/byJoey/wk-Auto-update)
 
