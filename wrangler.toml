@@ -1,7 +1,9 @@
 ﻿name = "wk-cfnew"
 main = "_worker.js"
 compatibility_date = "2026-01-20"
+no_bundle = true
 workers_dev = true
+preview_urls = true
 
 
 [vars]
