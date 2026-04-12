@@ -6,7 +6,7 @@
 
 2. 打开你的仓库，进入 Actions 页面，点击 Enable workflows（启用 GitHub Actions）。
 
-3. **配置 Cloudflare 凭证（Secrets 和 Variables）：**
+3. **配置 Cloudflare 凭证（Secrets）：**
 
    | 类型    | 名称              | 说明                                                                |
    | ------- | ----------------- | ------------------------------------------------------------------- |
@@ -43,7 +43,7 @@
 
 ## 工作流程
 
-GitHub Actions 会每日 00:00（北京时间）自动运行：
+GitHub Actions 会每日 **UTC 16:00（北京时间 00:00）** 自动运行：
 
 1. **检查 `update_type.txt` 文件：如果文件不存在，会自动创建并写入 `1`（表示正式版）。**
 
@@ -53,21 +53,21 @@ GitHub Actions 会每日 00:00（北京时间）自动运行：
 
 4. 比较本地 version.txt 的记录。
 
-5. 若版本不同，则自动下载并替换 `_worker.js`。
+5. 若版本不同，则自动下载并替换 `_worker.js`，并更新 `version.txt`。
 
-6. 更新 version.txt。
+6. 自动提交并推送到主分支（main）。
 
-7. 自动提交并推送到主分支（main）。
+7. **如果 `update_type.txt` 文件是自动创建的，也会一并提交到仓库。**
 
-8. **执行 KV 命名空间创建/绑定流程。**
+8. **初始化环境（安装 wrangler）。**
 
-9. **更新 wrangler.toml 中的 u 变量（若 secrets.CF_VAR_U 已配置）。**
+9. **执行 KV 命名空间创建/绑定流程。**
 
-10. **配置自定义域名（若 secrets.CF_ROUTE_DOMAIN 已配置）。**
+10. **更新 wrangler.toml 中的 u 变量（若 secrets.CF_VAR_U 已配置）。**
 
-11. 部署到 Cloudflare Workers。
+11. **配置自定义域名（若 secrets.CF_ROUTE_DOMAIN 已配置）。**
 
-12. **如果 `update_type.txt` 文件是自动创建的，也会一并提交到仓库。**
+12. 部署到 Cloudflare Workers。
 
 13. **如果更新成功并提交了更改，工作流会首先查找一个名为 `_worker.js 自动更新通知` 且带有 `auto-update-status-issue` 标签的现有 Issue。如果找到，则在该 Issue 下添加一条评论，包含更新时间、版本类型和版本号；如果未找到，则创建一个新的 Issue 并添加该标签。**
 
@@ -79,10 +79,12 @@ GitHub Actions 会每日 00:00（北京时间）自动运行：
 /
 ├── _worker.js           # Cloudflare Worker 主文件
 ├── version.txt          # 当前版本记录
-├── update_type.txt     # 更新类型配置 (1=正式版, 0=预发布版)
+├── update_type.txt      # 更新类型配置 (1=正式版, 0=预发布版)
 ├── wrangler.toml       # Cloudflare Workers 配置
-├── package.json        # 项目依赖配置
-├── LICENSE
+├── package.json         # 项目依赖配置
+├── scripts/             # 自动化脚本目录
+│   ├── step-kv.sh      # KV 命名空间创建/绑定脚本 (Linux/macOS)
+│   └── step-kv.ps1     # KV 命名空间创建/绑定脚本 (Windows)
 ├── .gitignore
 ├── README.md
 └── .github/
@@ -98,7 +100,7 @@ GitHub Actions 会每日 00:00（北京时间）自动运行：
 
 | 名称              | 必填 | 说明                                                                                          |
 | ----------------- | ---- | --------------------------------------------------------------------------------------------- |
-| `CF_API_TOKEN`    | 是   | Cloudflare API Token，需包含 `Workers:Edit`、`Workers Routes:Edit` 权限                       |
+| `CF_API_TOKEN`    | 是   | Cloudflare API Token，需包含 `Workers:Edit`、`Workers Routes:Edit`、`Workers KV:Write` 权限   |
 | `CF_ACCOUNT_ID`   | 是   | Cloudflare 账户 ID，可在 Dashboard URL 中获取                                                 |
 | `CF_VAR_U`        | 否   | 环境变量 u 的值，用于更新 wrangler.toml 中的配置                                              |
 | `CF_ROUTE_DOMAIN` | 否   | 自定义域名（如 `shop.example.com`），配置后会自动设置 `workers_dev=false` 并添加 `[[routes]]` |
@@ -112,7 +114,24 @@ GitHub Actions 会每日 00:00（北京时间）自动运行：
 | `release_type` | 更新类型：release（正式版）或 prerelease（预发布版） | release   |
 | `kv-name`      | KV 命名空间名称                                      | cf-new-kv |
 
-### 3. 更新类型配置（`update_type.txt`）
+### 3. wrangler.toml 配置说明
+
+项目根目录下的 `wrangler.toml` 是 Cloudflare Workers 的核心配置文件，包含以下关键配置项：
+
+| 配置项               | 说明                                                                  |
+| -------------------- | --------------------------------------------------------------------- |
+| `name`               | Worker 名称                                                           |
+| `main`               | 入口文件路径                                                          |
+| `compatibility_date` | 兼容性日期，指定 Worker 运行的运行时版本                              |
+| `workers_dev`        | 是否启用 workers.dev 子域名                                           |
+| `preview_urls`       | 是否启用预览 URL                                                      |
+| `[vars]`             | 环境变量配置，如 `u`（UUID 值）                                       |
+| `[[kv_namespaces]]`  | KV 命名空间绑定，`binding` 为代码中引用的名称，`id` 为实际命名空间 ID |
+| `[observability]`    | 可观测性配置，包含日志（logs）和调用追踪（traces）                    |
+
+> **注意**：`wrangler.toml` 中的 KV 命名空间 ID 会在工作流首次运行时自动创建并更新，无需手动配置。
+
+### 4. 更新类型配置（`update_type.txt`）
 
 在仓库根目录下创建或修改 `update_type.txt` 文件：
 
@@ -121,7 +140,7 @@ GitHub Actions 会每日 00:00（北京时间）自动运行：
 - **如果 `update_type.txt` 文件不存在，工作流会自动创建它并默认设置为 `1`（正式版）。**
 - **手动触发时，您可以通过 GitHub Actions 界面选择更新类型，此选择将覆盖 `update_type.txt` 的设置。**
 
-### 4. 更新成功通知
+### 5. 更新成功通知
 
 - 工作流在成功更新并提交代码后，会尝试复用一个特定的 GitHub Issue 进行通知。
 - 该 Issue 的标题统一为 `_worker.js 自动更新通知`，并带有 `auto-update-status-issue` 标签。
@@ -129,7 +148,7 @@ GitHub Actions 会每日 00:00（北京时间）自动运行：
 - 如果该 Issue 不存在，工作流会创建一个新的 Issue。
 - 您可以通过关注该仓库的 Issue 动态来接收通知。
 
-### 5. 本地开发
+### 6. 本地开发
 
 ```bash
 # 安装依赖
