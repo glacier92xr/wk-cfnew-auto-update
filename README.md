@@ -188,4 +188,4 @@ npm run deploy
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=glacier92xr/wk-cfnew-auto-update&type=Timeline)](https://www.star-history.com/#glacier92xr/wk-cfnew-auto-update&Timeline)
+![Star History Chart](https://api.star-history.com/svg?repos=glacier92xr/wk-cfnew-auto-update&type=Timeline)
