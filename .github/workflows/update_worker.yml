@@ -30,6 +30,11 @@ jobs:
       - name: Checkout 仓库 # 检出仓库代码
         uses: actions/checkout@v6
 
+      - name: 设置 Node.js 最新稳定版 # 设置 Node.js 最新稳定版
+        uses: actions/setup-node@v6
+        with:
+          node-version: "lts/*"
+
       - name: 检查并初始化 update_type.txt # 检查并初始化 update_type.txt 文件
         id: init_update_type_file
         run: |
