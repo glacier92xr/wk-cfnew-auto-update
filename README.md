@@ -13,14 +13,14 @@
 
 2. **启用 GitHub Actions**：进入你 Fork 后的仓库，点击 **Actions** 页面，首次访问会提示启用 workflows。
 
-3. **配置 Cloudflare 凭证（Secrets）**：在仓库页面依次点击 **Settings → Secrets and variables → Actions → New repository secret**，添加以下敏感信息：
+3. **配置敏感信息**：在仓库 **Settings → Secrets and variables → Actions** 中添加以下敏感信息（详细说明请参阅"配置说明"章节）：
 
-   | 类型    | 名称              | 说明                                                                                        | 必填 |
-   | ------- | ----------------- | ------------------------------------------------------------------------------------------- | ---- |
-   | Secrets | `CF_API_TOKEN`    | Cloudflare API Token，需包含 `Workers:Edit`、`Workers Routes:Edit`、`Workers KV:Write` 权限 | 是   |
-   | Secrets | `CF_ACCOUNT_ID`   | Cloudflare 账户 ID，可在 Cloudflare Dashboard URL 中获取                                    | 是   |
-   | Secrets | `CF_VAR_U`        | 环境变量 u 的值（UUID），用于更新 Worker 配置                                               | 否   |
-   | Secrets | `CF_ROUTE_DOMAIN` | 自定义域名（如 `shop.example.com`），配置后自动启用自定义路由                               | 否   |
+   | 名称              | 必填 | 说明                                |
+   | ----------------- | ---- | ----------------------------------- |
+   | `CF_API_TOKEN`    | 是   | Cloudflare API Token                |
+   | `CF_ACCOUNT_ID`   | 是   | Cloudflare 账户 ID                  |
+   | `CF_VAR_U`        | 否   | 环境变量 u 的值（UUID）             |
+   | `CF_ROUTE_DOMAIN` | 否   | 自定义域名（如 `shop.example.com`） |
 
 4. **触发更新**：完成配置后，你可以：
    - **手动触发**：进入 **Actions** 页面，选择 "auto update and deploy" 工作流，点击 **Run workflow** 手动执行。
@@ -137,12 +137,12 @@ wk-cfnew-auto-update/
 
 在仓库 **Settings → Secrets and variables → Actions** 中配置以下 Secrets：
 
-| 名称              | 必填 | 说明                                                                                                  |
-| ----------------- | ---- | ----------------------------------------------------------------------------------------------------- |
-| `CF_API_TOKEN`    | 是   | Cloudflare API Token，需包含 `Workers:Edit`、`Workers Routes:Edit`、`Workers KV:Write` 权限           |
-| `CF_ACCOUNT_ID`   | 是   | Cloudflare 账户 ID，可在 Dashboard URL 中获取（格式：`https://dash.cloudflare.com/<ACCOUNT_ID>/...`） |
-| `CF_VAR_U`        | 否   | 环境变量 `u` 的值（UUID），用于更新 `wrangler.toml` 中的 `[vars]` 配置                                |
-| `CF_ROUTE_DOMAIN` | 否   | 自定义域名（如 `shop.example.com`），配置后自动设置 `workers_dev=false` 并添加 `[[routes]]`           |
+| 名称              | 必填 | 说明                                                                                                                                                            |
+| ----------------- | ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `CF_API_TOKEN`    | 是   | Cloudflare API Token，需包含 `账户:Workers 脚本:编辑`、`账户:Workers KV存储:编辑`、`区域:Workers 路由:编辑`、`用户:用户详细信息:读取` 权限和 自定义域名编辑权限 |
+| `CF_ACCOUNT_ID`   | 是   | Cloudflare 账户 ID，可在 Dashboard URL 中获取（格式：`https://dash.cloudflare.com/<ACCOUNT_ID>/...`）                                                           |
+| `CF_VAR_U`        | 否   | 环境变量 `u` 的值（UUID），用于更新 `wrangler.toml` 中的 `[vars]` 配置                                                                                          |
+| `CF_ROUTE_DOMAIN` | 否   | 自定义域名（如 `shop.example.com`），配置后自动设置 `workers_dev=false` 并添加 `[[routes]]`                                                                     |
 
 ### 2. 工作流环境变量
 
