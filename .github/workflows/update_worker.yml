@@ -151,59 +151,59 @@ jobs:
           # 推送更改到远程仓库
           git push
 
-      - name: 发送更新成功通知 (复用或创建 GitHub Issue) # 发送更新成功通知 (复用或创建 GitHub Issue)
-        # 仅在前面的步骤都成功执行且确实进行了更新时触发此通知
-        if: success() && env.need_update == 'true'
-        uses: actions/github-script@v8
-        with:
-          # 使用 GITHUB_TOKEN 进行身份验证，它具有创建 Issue 的权限
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            // 获取仓库所有者和名称
-            const { owner, repo } = context.repo;
-            // 从环境变量中获取最新标签名和发布类型
-            const latestTag = process.env.latest_tag;
-            const releaseType = process.env.release_type;
-            const typeText = releaseType === 'prerelease' ? '预发布版本' : '正式版本'; // 根据发布类型设置文本
-            // 定义通知 Issue 的标题和内容
-            const notificationTitle = `_worker.js 自动更新通知`; // 用于查找和创建的统一标题
-            const notificationBody = `_worker.js 已成功更新到${typeText} ${latestTag}。`;
-            const timestamp = new Date().toLocaleString('zh-CN'); // 获取当前时间并格式化
+      # - name: 发送更新成功通知 (复用或创建 GitHub Issue) # 发送更新成功通知 (复用或创建 GitHub Issue)
+      #   # 仅在前面的步骤都成功执行且确实进行了更新时触发此通知
+      #   if: success() && env.need_update == 'true'
+      #   uses: actions/github-script@v8
+      #   with:
+      #     # 使用 GITHUB_TOKEN 进行身份验证，它具有创建 Issue 的权限
+      #     github-token: ${{ secrets.GITHUB_TOKEN }}
+      #     script: |
+      #       // 获取仓库所有者和名称
+      #       const { owner, repo } = context.repo;
+      #       // 从环境变量中获取最新标签名和发布类型
+      #       const latestTag = process.env.latest_tag;
+      #       const releaseType = process.env.release_type;
+      #       const typeText = releaseType === 'prerelease' ? '预发布版本' : '正式版本'; // 根据发布类型设置文本
+      #       // 定义通知 Issue 的标题和内容
+      #       const notificationTitle = `_worker.js 自动更新通知`; // 用于查找和创建的统一标题
+      #       const notificationBody = `_worker.js 已成功更新到${typeText} ${latestTag}。`;
+      #       const timestamp = new Date().toLocaleString('zh-CN'); // 获取当前时间并格式化
 
-            // 尝试查找带有特定标签的现有通知 Issue
-            const { data: issues } = await github.rest.issues.listForRepo({
-              owner,
-              repo,
-              state: 'open', // 只查找开放的 Issue
-              labels: 'auto-update-status-issue', // 用于识别此特定通知 Issue 的唯一标签
-              per_page: 1 // 只获取一个结果
-            });
+      #       // 尝试查找带有特定标签的现有通知 Issue
+      #       const { data: issues } = await github.rest.issues.listForRepo({
+      #         owner,
+      #         repo,
+      #         state: 'open', // 只查找开放的 Issue
+      #         labels: 'auto-update-status-issue', // 用于识别此特定通知 Issue 的唯一标签
+      #         per_page: 1 // 只获取一个结果
+      #       });
 
-            let targetIssue = null;
-            if (issues.length > 0) {
-              targetIssue = issues[0];
-            }
+      #       let targetIssue = null;
+      #       if (issues.length > 0) {
+      #         targetIssue = issues[0];
+      #       }
 
-            if (targetIssue) {
-              // 如果找到现有 Issue，则在其上添加评论
-              await github.rest.issues.createComment({
-                owner,
-                repo,
-                issue_number: targetIssue.number,
-                body: `${notificationBody}\n\n更新时间: ${timestamp}` // 在评论中包含时间戳
-              });
-              console.log(`已在现有 Issue #${targetIssue.number} 上添加评论。`); // 打印日志
-            } else {
-              // 如果没有找到，则创建新的 Issue
-              const { data: newIssue } = await github.rest.issues.create({
-                owner,
-                repo,
-                title: notificationTitle, // 使用统一标题
-                body: `${notificationBody}\n\n更新时间: ${timestamp}`, // 在 Issue 正文中包含时间戳
-                labels: ['auto-update', 'success', 'auto-update-status-issue'] // 添加所有相关标签，包括唯一标签
-              });
-              console.log(`已创建新的 Issue #${newIssue.number}。`); // 打印日志
-            }
+      #       if (targetIssue) {
+      #         // 如果找到现有 Issue，则在其上添加评论
+      #         await github.rest.issues.createComment({
+      #           owner,
+      #           repo,
+      #           issue_number: targetIssue.number,
+      #           body: `${notificationBody}\n\n更新时间: ${timestamp}` // 在评论中包含时间戳
+      #         });
+      #         console.log(`已在现有 Issue #${targetIssue.number} 上添加评论。`); // 打印日志
+      #       } else {
+      #         // 如果没有找到，则创建新的 Issue
+      #         const { data: newIssue } = await github.rest.issues.create({
+      #           owner,
+      #           repo,
+      #           title: notificationTitle, // 使用统一标题
+      #           body: `${notificationBody}\n\n更新时间: ${timestamp}`, // 在 Issue 正文中包含时间戳
+      #           labels: ['auto-update', 'success', 'auto-update-status-issue'] // 添加所有相关标签，包括唯一标签
+      #         });
+      #         console.log(`已创建新的 Issue #${newIssue.number}。`); // 打印日志
+      #       }
 
       - name: 初始化环境
         # 仅在需要更新时执行此步骤
@@ -239,7 +239,7 @@ jobs:
             echo "正在更新 wrangler.toml 中的 u 变量..."
 
             # 使用 sed 更新 wrangler.toml 中的 u 值
-            sed -i 's/u = ".*"/u = "${{ secrets.CF_VAR_U }}"/' wrangler.toml
+            sed -i '/^u = ".*"/c\u = "'"${{ secrets.CF_VAR_U }}"'"' wrangler.toml
 
             echo "wrangler.toml 中的 u 变量已更新"
           else
