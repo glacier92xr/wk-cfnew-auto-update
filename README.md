@@ -152,7 +152,7 @@ wk-cfnew-auto-update/
 | -------------- | ---- | -------------- | -------------------------------------------------------- |
 | `GITHUB_REPO`  | 是   | `byJoey/cfnew` | 上游仓库，格式：`owner/repo`                             |
 | `RELEASE_TYPE` | 否   | `release`      | 更新类型：`release`（正式版）或 `prerelease`（预发布版） |
-| `KV_NAME`      | 否   | `cf-new-kv`    | Cloudflare KV 命名空间名称                               |
+| `KV_NAME`      | 否   | `wb-cfnew-kv`  | Cloudflare KV 命名空间名称                               |
 
 #### 环境变量配置示例
 
@@ -163,7 +163,7 @@ jobs:
     env:
       GITHUB_REPO: byJoey/cfnew # 上游仓库
       RELEASE_TYPE: release # 更新类型：release 或 prerelease
-      KV_NAME: cf-new-kv # KV 命名空间名称
+      KV_NAME: wb-cfnew-kv # KV 命名空间名称
 ```
 
 > **说明**：修改工作流中的环境变量需要直接编辑 `.github/workflows/update_worker.yml` 文件。

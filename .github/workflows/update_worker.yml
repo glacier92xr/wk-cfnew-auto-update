@@ -18,7 +18,7 @@ jobs:
       # 更新版本类型 默认正式发布版本 release,prerelease为预发布版本
       RELEASE_TYPE: release
       # KV 名称
-      KV_NAME: cf-new-kv
+      KV_NAME: wb-cfnew-kv
 
     steps:
       - name: Checkout 仓库 # 检出仓库代码
