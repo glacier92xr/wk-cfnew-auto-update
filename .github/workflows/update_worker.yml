@@ -127,7 +127,7 @@ jobs:
           echo "已删除 Pages.zip"
 
           # 将 _worker.js 复制回工作目录
-          cp _worker.js "$GITHUB_WORKSPACE/_worker.js"
+          cp -f _worker.js "$GITHUB_WORKSPACE/_worker.js"
           echo "_worker.js 已复制到工作目录"
 
           # 将最新标签名写入 version.txt (在工作目录)
